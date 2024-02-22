@@ -1,16 +1,26 @@
 import { useState } from 'react';
-import { TouchableOpacity, Text, View, TextInput, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, View, TextInput, StyleSheet, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const Login = ( navigation ) => {
+import { getAuth } from 'firebase/auth';
+
+const LoginScreen = ( {navigation} ) => {
     const [authNumber, setAuthNumber] = useState('');
     const [password, setPassword] = useState('');
 
+    const auth = getAuth();
+
     const handleLogin = () => {
+        // Assuming you have a predefined correct password for comparison
+        const correctPassword = 'yourCorrectPassword';
+    
         // Add an error check for if the password is wrong here
-        // if () {
-        //   return;
-        // }
+        if (password !== correctPassword) {
+            // Password is incorrect, you can show an error message or handle it as needed
+            Alert.alert('Authentication Failed', 'Please try again.');
+            return;
+        }
+        // Password is correct, navigate to 'Autho' screen
         navigation.navigate('Autho', { authNumber });
     };
     return (
@@ -82,12 +92,12 @@ const styles = StyleSheet.create({
     },
 
     submitButton: {
-        backgroundColor: 'black',
-        borderRadius: 20,
+        backgroundColor: 'silver',
+        borderRadius: 10,
         color: 'white',
         padding: 10,
         marginTop: 10,
     },
 });
 
-export default Login;
+export default LoginScreen;
