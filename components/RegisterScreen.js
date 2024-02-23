@@ -1,30 +1,40 @@
 import { useState, useCallback } from 'react';
-import { TouchableOpacity, Text, View, TextInput, StyleSheet, Alert } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { LinearGradient } from "expo-linear-gradient";
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, addDoc } from 'firebase/firestore';
 
-import { signInWithEmailAndPassword } from 'firebase/auth';
+const RegisterScreen = ({auth, navigation, db}) => {
+    const [email, setEmail] = useState('')
+    const [authNumber, setAuthNumber] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmedPassword, setConfirmedPassword] = useState('');
 
-import { getAuth } from 'firebase/auth';
-
-const LoginScreen = ({ route, navigation }) => {
-    const [authNumber, setAuthNumber] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-
-    const auth = getAuth();
-
-    const handleLogin = useCallback(async () => {
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-            navigation.navigate('AuthoScreen', { authNumber });
-        } catch (error) {
-            Alert.alert('Authentication Failed', 'Please check your credentials and try again.');
+    const handleRegister = useCallback(async() => {
+        if (!email || !authNumber || !password || !confirmedPassword) {
+            Alert.alert('Required fields are missing, please fill in all fields.')
+            return;
         }
-    }, [auth, email, password, navigation]);
 
-    const handleRegister = useCallback(() => {
-        navigation.navigate('RegisterScreen', {});
-    }, [navigation]);
+        if (password !== confirmedPassword) {
+            Alert.alert('Passwords do not match, please try again.')
+            return;
+        }
+
+        try {
+            
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            navigation.navigate('LoginScreen', { authNumber });
+            const user = userCredential.user;
+            Alert.alert('New user created, redirecting to Login.');
+            const newUser = { email, authNumber };
+            const docRef = await addDoc(collection(db, 'users'), newUser);
+            
+        } catch (error) {
+            Alert.alert('Error creating user: ' + error.message);
+        }
+    }, [auth, authNumber, email, password, confirmedPassword, navigation]);
+
     return (
         <LinearGradient
             colors={['#4c669f', '#3b5998', 'white']}
@@ -33,14 +43,13 @@ const LoginScreen = ({ route, navigation }) => {
             <View style={styles.container}>
                 <View style={styles.subContainer}>
                     <TextInput
-                        placeholder='Email'
+                        placeholder='Write your Email here'
                         onChangeText={setEmail}
                         style={styles.textInput}
                         keyboardType='email-address'
                     />
-
                     <TextInput
-                        placeholder='Auth #'
+                        placeholder='Auth Number'
                         onChangeText={setAuthNumber}
                         style={styles.textInput}
                         keyboardType='numeric'
@@ -52,26 +61,25 @@ const LoginScreen = ({ route, navigation }) => {
                         secureTextEntry={true}
                         style={styles.textInput}
                     />
-                    <TouchableOpacity
-                        onPress={handleLogin}
-                        style={styles.submitButton}
-                    >
-                        <Text>Login</Text>
-                    </TouchableOpacity>
+
+                    <TextInput
+                        placeholder='Confirm Password'
+                        onChangeText={setConfirmedPassword}
+                        secureTextEntry={true}
+                        style={styles.textInput}
+                    />
 
                     <TouchableOpacity
                         onPress={handleRegister}
                         style={styles.submitButton}
                     >
-                        <Text>No account? Register here!</Text>
+                        <Text>Finalize Registration</Text>
                     </TouchableOpacity>
                 </View>
             </View>
-        </LinearGradient >
-
+        </LinearGradient>
     )
 }
-
 const styles = StyleSheet.create({
 
     container: {
@@ -112,10 +120,9 @@ const styles = StyleSheet.create({
     submitButton: {
         backgroundColor: 'silver',
         borderRadius: 10,
-        color: 'white',
         padding: 10,
         marginTop: 10,
     },
 });
 
-export default LoginScreen;
+export default RegisterScreen;

@@ -1,13 +1,15 @@
 import { StyleSheet, LogBox, Alert } from 'react-native';
 import LoginScreen from './components/LoginScreen';
 import AuthoScreen from './components/AuthoScreen';
+import RegisterScreen from './components/RegisterScreen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { getFirestore, disableNetwork, enableNetwork } from "firebase/firestore";
 import { useNetInfo } from "@react-native-community/netinfo";
 import { useEffect } from "react";
 import { getStorage } from 'firebase/storage';
-import { app } from 'firebase.config.js'
+import { getAuth } from 'firebase/auth';
+import app from './firebase.config'
 
 //for navigation
 const Stack = createNativeStackNavigator();
@@ -22,6 +24,8 @@ const App = () => {
   useEffect(() => {
     initializeFirebaseServices();
   }, []);
+
+  const auth = getAuth(app);
 
   const initializeFirebaseServices = () => {
     // Initialize Cloud Firestore
@@ -39,20 +43,27 @@ const App = () => {
     }
   };
 
+  const RegisterScreenWrapper = (props) => {
+    return <RegisterScreen db={getFirestore(app)} auth={getAuth(app)} {...props} />;
+  };
+
+  const AuthoScreenWrapper = (props) => {
+    return (
+      <AuthoScreen
+        isConnected={connectionStatus.isConnected}
+        db={getFirestore(app)}
+        storage={getStorage(app)}
+        {...props}
+      />
+    );
+  };
+
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Autho">
-          {(props) => (
-            <Autho
-              isConnected={connectionStatus.isConnected}
-              db={getFirestore(app)}
-              storage={getStorage(app)}
-              {...props}
-            />
-          )}
-        </Stack.Screen>
+      <Stack.Navigator initialRouteName="LoginScreen">
+        <Stack.Screen name="LoginScreen" component={LoginScreen} />
+        <Stack.Screen name="RegisterScreen" component={RegisterScreenWrapper} />
+        <Stack.Screen name="AuthoScreen" component={AuthoScreenWrapper} />
       </Stack.Navigator>
     </NavigationContainer>
   );
