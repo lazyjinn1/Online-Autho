@@ -6,17 +6,25 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 
 import { getAuth } from 'firebase/auth';
 
-const LoginScreen = ({ route, navigation }) => {
-    const [authNumber, setAuthNumber] = useState('');
+const LoginScreen = ({ navigation }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+
 
     const auth = getAuth();
 
     const handleLogin = useCallback(async () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
-            navigation.navigate('AuthoScreen', { authNumber });
+
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+        const user = userCredential.user;
+            if (user) {
+                navigation.navigate('AuthoScreen', { uid: user.uid });
+            } else {
+                Alert.alert('Authentication Failed', 'An unexpected error occurred. Please try again.');
+            }
         } catch (error) {
             Alert.alert('Authentication Failed', 'Please check your credentials and try again.');
         }
@@ -27,7 +35,7 @@ const LoginScreen = ({ route, navigation }) => {
     }, [navigation]);
     return (
         <LinearGradient
-            colors={['#4c669f', '#3b5998', 'white']}
+            colors={['darkslategray', 'lightslategray', 'white']}
             style={styles.linearGradient}
         >
             <View style={styles.container}>
@@ -39,13 +47,6 @@ const LoginScreen = ({ route, navigation }) => {
                         keyboardType='email-address'
                     />
 
-                    <TextInput
-                        placeholder='Auth #'
-                        onChangeText={setAuthNumber}
-                        style={styles.textInput}
-                        keyboardType='numeric'
-                        maxLength={4}
-                    />
                     <TextInput
                         placeholder='Password'
                         onChangeText={setPassword}
@@ -112,6 +113,7 @@ const styles = StyleSheet.create({
     submitButton: {
         backgroundColor: 'silver',
         borderRadius: 10,
+        borderWidth: 1,
         color: 'white',
         padding: 10,
         marginTop: 10,

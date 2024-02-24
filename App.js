@@ -11,6 +11,7 @@ import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
 import app from './firebase.config'
 
+
 //for navigation
 const Stack = createNativeStackNavigator();
 
@@ -27,7 +28,7 @@ const App = () => {
 
   const auth = getAuth(app);
 
-  const initializeFirebaseServices = () => {
+  const initializeFirebaseServices = async() => {
     // Initialize Cloud Firestore
     const db = getFirestore(app);
 

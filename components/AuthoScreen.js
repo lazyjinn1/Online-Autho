@@ -1,18 +1,19 @@
-import { useEffect, useState } from 'react';
-import { View, StyleSheet, Platform, KeyboardAvoidingView, Text, TextInput, TouchableOpacity, Modal, ScrollView, Alert } from 'react-native';
-import { collection, addDoc, query } from 'firebase/firestore';
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// Import necessary modules from React, Firebase, and other libraries
+import React, { useEffect, useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Modal, ScrollView, Alert, StyleSheet, Platform, KeyboardAvoidingView } from 'react-native';
+import { collection, addDoc, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { LinearGradient } from 'expo-linear-gradient';
 import { DatePickerInput } from 'react-native-paper-dates';
-import { enGB, registerTranslation } from 'react-native-paper-dates'
-
+import { enGB, registerTranslation } from 'react-native-paper-dates';
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
 import { getAuth } from 'firebase/auth';
 
-registerTranslation('en', enGB)
+// Register English translations for DatePicker
+registerTranslation('en', enGB);
 
-const AuthoScreen = ({ route, db }) => {
+// Functional component AuthoScreen with props route, db, and navigation
+const AuthoScreen = ({ route, db, navigation }) => {
+    // State variables for form inputs and modal visibility
     const [dateOfRepair, setDateOfRepair] = useState(new Date());
     const [roNumber, setRoNumber] = useState('');
     const [lineNumber, setLineNumber] = useState('');
@@ -21,30 +22,71 @@ const AuthoScreen = ({ route, db }) => {
     const [furtherComments, setFurtherComments] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [todaysDateAndTime, setTodaysDateAndTime] = useState(new Date());
-
-    const fixedDateOfRepair = dateOfRepair.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })
-
     const [sequentialNumber, setSequentialNumber] = useState(1);
+    const [authNumber, setAuthNumber] = useState(null);
 
-    const { authNumber } = route.params;
+    const [user, setUser] = useState(null); // State to store user data
 
+    // Destructure uid and authNumber from route.params
+    const { uid } = route.params;
+
+    // Fetch user data when the component mounts
+    useEffect(() => {
+        const fetchUserAndMaxSequentialNumber = async () => {
+            try {
+                // Query to get user data based on uid
+                const userQuery = query(collection(db, 'users'), where('uid', '==', uid));
+                const userSnapshot = await getDocs(userQuery);
+                // Extract user data from the snapshot
+                const user = userSnapshot.docs[0]?.data();
+
+                const userAuthNumber = user ? user['Auth #'] : null;
+                setAuthNumber(userAuthNumber);
+
+                // Set the user state with the fetched data
+                setUser(user);
+
+                // Check if user or user.uid is undefined
+                if (!user || !user.uid) {
+                    console.error('User is undefined or does not have a uid property.');
+                    return;
+                }
+                // Fetch the maximum sequential number from the collection
+                const maxSequentialNumberQuery = query(collection(db, 'Authorizations'), orderBy('Sequential #', 'desc'));
+                const maxSequentialNumberSnapshot = await getDocs(maxSequentialNumberQuery);
+                const maxSequentialNumberDoc = maxSequentialNumberSnapshot.docs[0];
+
+                setSequentialNumber(maxSequentialNumberDoc ? maxSequentialNumberDoc.data()['Sequential #'] + 1 : 1);
+            } catch (error) {
+                console.error('Error fetching user data:', error.message);
+            }
+        };
+        // Call the fetchUserAndMaxSequentialNUmber function
+        fetchUserAndMaxSequentialNumber();
+    }, [uid, db, user]);
+
+    // Firebase authentication object
     const auth = getAuth();
 
+    // Handle opening the review modal
     const handleOpenReview = () => {
         setShowModal(true);
-    }
+    };
 
+    // Handle submitting Autho form
     const handleSubmitAutho = async () => {
         try {
+            // Check if required fields are empty
             if (!dateOfRepair || !roNumber || !mileage || !vinNumber || !furtherComments) {
                 Alert.alert('Required Fields left empty. Please fill in required fields.');
                 setShowModal(false);
-                return
+                return;
             }
 
+            // Add Autho document to Firebase collection
             const authDocRef = await addDoc(collection(db, 'Authorizations'), {
                 'Auth #': authNumber,
-                'Date of Repair': fixedDateOfRepair,
+                'Date of Repair': dateOfRepair.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' }),
                 'RO #': roNumber,
                 'Mileage': mileage,
                 'VIN #': vinNumber,
@@ -54,20 +96,22 @@ const AuthoScreen = ({ route, db }) => {
                 'Sequential #': sequentialNumber
             });
 
+            // Show success message and reset form fields
             Alert.alert('Successfully uploaded Autho');
             setRoNumber('');
             setLineNumber('');
             setMileage('');
             setVinNumber('');
             setFurtherComments('');
-            setSequentialNumber(sequentialNumber + 1)
+            setSequentialNumber(sequentialNumber + 1);
             setShowModal(false);
-
         } catch (error) {
+            // Show error message if Autho upload fails
             Alert.alert('Error uploading Autho. Please try again.');
         }
-    }
+    };
 
+    // JSX structure with added comments
     return (
         <LinearGradient
             colors={['#4c669f', '#3b5998', 'white']}
@@ -76,13 +120,13 @@ const AuthoScreen = ({ route, db }) => {
             <View style={styles.container}>
                 <ScrollView style={styles.scrollView}>
                     <Text>Welcome!</Text>
-
                     <Text>Authorization Number: {authNumber}</Text>
-
                     <Text>Sequential Number: {sequentialNumber}</Text>
 
+                    {/* SafeAreaProvider for DatePickerInput */}
                     <SafeAreaProvider>
-                        <View >
+                        <View>
+                            {/* Date Picker Input */}
                             <DatePickerInput
                                 locale="en"
                                 label="DateOfRepair"
@@ -95,6 +139,7 @@ const AuthoScreen = ({ route, db }) => {
                         </View>
                     </SafeAreaProvider>
 
+                    {/* TextInput for RO Number */}
                     <TextInput
                         style={styles.AuthoStyle}
                         onChangeText={setRoNumber}
@@ -104,6 +149,7 @@ const AuthoScreen = ({ route, db }) => {
                         value={roNumber}
                     />
 
+                    {/* TextInput for Mileage */}
                     <TextInput
                         style={styles.AuthoStyle}
                         onChangeText={setMileage}
@@ -113,6 +159,7 @@ const AuthoScreen = ({ route, db }) => {
                         value={mileage}
                     />
 
+                    {/* TextInput for VIN Number */}
                     <TextInput
                         style={styles.AuthoStyle}
                         onChangeText={setVinNumber}
@@ -120,6 +167,7 @@ const AuthoScreen = ({ route, db }) => {
                         value={vinNumber}
                     />
 
+                    {/* TextInput for Further Comments */}
                     <TextInput
                         style={styles.AuthoStyle}
                         onChangeText={setFurtherComments}
@@ -127,6 +175,7 @@ const AuthoScreen = ({ route, db }) => {
                         value={furtherComments}
                     />
 
+                    {/* TextInput for Line Number */}
                     <TextInput
                         style={styles.AuthoStyle}
                         onChangeText={setLineNumber}
@@ -134,7 +183,7 @@ const AuthoScreen = ({ route, db }) => {
                         value={lineNumber}
                     />
 
-
+                    {/* Submit Autho Button */}
                     <TouchableOpacity
                         onPress={handleOpenReview}
                         style={styles.submitButton}
@@ -142,7 +191,8 @@ const AuthoScreen = ({ route, db }) => {
                         <Text>Submit Autho</Text>
                     </TouchableOpacity>
 
-                    {showModal &&
+                    {/* Review Modal */}
+                    {showModal && (
                         <Modal
                             animationType='smooth'
                             visible={showModal}
@@ -150,9 +200,10 @@ const AuthoScreen = ({ route, db }) => {
                         >
                             <View style={styles.container}>
                                 <View style={[styles.modalView, { alignItems: 'left' }]}>
+                                    {/* Review details */}
                                     <Text style={{ fontWeight: 'bold', fontSize: 20 }}>Please Review:</Text>
                                     <Text>Auth #: {authNumber}</Text>
-                                    <Text>Date of Repair: {fixedDateOfRepair}</Text>
+                                    <Text>Date of Repair: {dateOfRepair.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' })}</Text>
                                     <Text>RO #: {roNumber}</Text>
                                     <Text>Mileage: {mileage}</Text>
                                     <Text>VIN #: {vinNumber}</Text>
@@ -165,28 +216,27 @@ const AuthoScreen = ({ route, db }) => {
                                         <Text>{todaysDateAndTime.toLocaleString()}</Text>
                                     </View>
 
+                                    {/* Submit Autho Button inside the modal */}
                                     <TouchableOpacity
                                         onPress={handleSubmitAutho}
                                         style={styles.submitButton}
-
                                     >
                                         <Text>Submit Autho</Text>
                                     </TouchableOpacity>
 
+                                    {/* Edit Autho Button inside the modal */}
                                     <TouchableOpacity
                                         style={styles.submitButton}
                                         onPress={() => setShowModal(false)}
                                     >
                                         <Text>Edit Autho</Text>
                                     </TouchableOpacity>
-
                                 </View>
                             </View>
-
                         </Modal>
-                    }
+                    )}
 
-                    {/* this is for fixing a well-known issue with ios and the keyboard */}
+                    {/* KeyboardAvoidingView for iOS */}
                     {Platform.OS === "ios" ? <KeyboardAvoidingView behavior="padding" /> : null}
                 </ScrollView>
             </View>
@@ -194,7 +244,9 @@ const AuthoScreen = ({ route, db }) => {
     );
 };
 
+// Styles
 const styles = StyleSheet.create({
+    // Styles for Autho TextInput
     AuthoStyle: {
         borderColor: 'black',
         borderWidth: 2,
@@ -203,6 +255,7 @@ const styles = StyleSheet.create({
         marginVertical: 10
     },
 
+    // Styles for Date Picker Input
     DateStyle: {
         borderColor: 'black',
         borderWidth: 2,
@@ -210,12 +263,14 @@ const styles = StyleSheet.create({
         width: 300,
     },
 
+    // Styles for container
     container: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
     },
 
+    // Styles for subContainer
     subContainer: {
         backgroundColor: 'white',
         justifyContent: 'center',
@@ -224,6 +279,7 @@ const styles = StyleSheet.create({
         padding: 15
     },
 
+    // Styles for scrollView
     scrollView: {
         marginHorizontal: 20,
         backgroundColor: 'white',
@@ -231,6 +287,7 @@ const styles = StyleSheet.create({
         padding: 15
     },
 
+    // Styles for textInput
     textInput: {
         width: '100%',
         padding: 25,
@@ -244,14 +301,17 @@ const styles = StyleSheet.create({
         backgroundColor: 'white'
     },
 
+    // Styles for submitButton
     submitButton: {
-        backgroundColor: 'white',
-        borderRadius: 20,
-        color: 'black',
+        backgroundColor: 'silver',
+        borderRadius: 10,
+        borderWidth: 1,
+        color: 'white',
         padding: 10,
         marginTop: 10,
     },
 
+    // Styles for linearGradient
     linearGradient: {
         flex: 1,
         width: '100%',
@@ -259,6 +319,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
 
+    // Styles for modalView
     modalView: {
         margin: 20,
         backgroundColor: 'white',
@@ -276,4 +337,5 @@ const styles = StyleSheet.create({
     },
 });
 
+// Export the AuthoScreen component
 export default AuthoScreen;

@@ -2,38 +2,45 @@ import { useState, useCallback } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { LinearGradient } from "expo-linear-gradient";
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, doc, setDoc } from 'firebase/firestore';
 
-const RegisterScreen = ({auth, navigation, db}) => {
-    const [email, setEmail] = useState('')
-    const [authNumber, setAuthNumber] = useState("");
-    const [password, setPassword] = useState("");
+const RegisterScreen = ({ auth, navigation, db }) => {
+    const [email, setEmail] = useState('');
+    const [authNumber, setAuthNumber] = useState('');
+    const [password, setPassword] = useState('');
     const [confirmedPassword, setConfirmedPassword] = useState('');
 
-    const handleRegister = useCallback(async() => {
-        if (!email || !authNumber || !password || !confirmedPassword) {
-            Alert.alert('Required fields are missing, please fill in all fields.')
+    const handleRegister = useCallback(async () => {
+        if (!email || !password || !confirmedPassword || !authNumber) {
+            Alert.alert('Required fields are missing, please fill in all fields.');
             return;
         }
 
         if (password !== confirmedPassword) {
-            Alert.alert('Passwords do not match, please try again.')
+            Alert.alert('Passwords do not match, please try again.');
             return;
         }
 
         try {
-            
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-            navigation.navigate('LoginScreen', { authNumber });
             const user = userCredential.user;
+            const uid = user.uid;
             Alert.alert('New user created, redirecting to Login.');
-            const newUser = { email, authNumber };
-            const docRef = await addDoc(collection(db, 'users'), newUser);
-            
+
+            const usersCollection = collection(db, 'users');
+            const userDocRef = doc(usersCollection, uid);
+
+            const newUser = { 'Email': email, uid: user.uid, 'Auth #': authNumber };
+
+            await setDoc(userDocRef, newUser);
+
+            Alert.alert('New user created, redirecting to Login.');
+            navigation.navigate('LoginScreen');
         } catch (error) {
             Alert.alert('Error creating user: ' + error.message);
+            console.log(error.message);
         }
-    }, [auth, authNumber, email, password, confirmedPassword, navigation]);
+    }, [auth, email, password, confirmedPassword, authNumber, navigation, db]);
 
     return (
         <LinearGradient
@@ -48,8 +55,9 @@ const RegisterScreen = ({auth, navigation, db}) => {
                         style={styles.textInput}
                         keyboardType='email-address'
                     />
+
                     <TextInput
-                        placeholder='Auth Number'
+                        placeholder='Write your Auth # here'
                         onChangeText={setAuthNumber}
                         style={styles.textInput}
                         keyboardType='numeric'
@@ -80,8 +88,8 @@ const RegisterScreen = ({auth, navigation, db}) => {
         </LinearGradient>
     )
 }
-const styles = StyleSheet.create({
 
+const styles = StyleSheet.create({
     container: {
         flex: 1,
         justifyContent: 'center',
@@ -120,6 +128,8 @@ const styles = StyleSheet.create({
     submitButton: {
         backgroundColor: 'silver',
         borderRadius: 10,
+        borderWidth: 1,
+        color: 'white',
         padding: 10,
         marginTop: 10,
     },
