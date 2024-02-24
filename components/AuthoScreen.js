@@ -111,6 +111,12 @@ const AuthoScreen = ({ route, db, navigation }) => {
         }
     };
 
+    const handleLogOut = () => {
+        setAuthNumber('');
+        setUser('');
+        navigation.navigate('LoginScreen');
+    }
+
     // JSX structure with added comments
     return (
         <LinearGradient
@@ -189,6 +195,13 @@ const AuthoScreen = ({ route, db, navigation }) => {
                         style={styles.submitButton}
                     >
                         <Text>Submit Autho</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={handleLogOut}
+                        style={styles.logoutButton}
+                    >
+                        <Text>Log Out</Text>
                     </TouchableOpacity>
 
                     {/* Review Modal */}
@@ -309,6 +322,15 @@ const styles = StyleSheet.create({
         color: 'white',
         padding: 10,
         marginTop: 10,
+    },
+
+    logoutButton: {
+        backgroundColor: 'silver',
+        borderRadius: 10,
+        borderWidth: 1,
+        color: 'white',
+        padding: 10,
+        marginTop: 200,
     },
 
     // Styles for linearGradient

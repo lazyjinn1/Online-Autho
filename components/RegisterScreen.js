@@ -34,8 +34,8 @@ const RegisterScreen = ({ auth, navigation, db }) => {
 
             await setDoc(userDocRef, newUser);
 
-            Alert.alert('New user created, redirecting to Login.');
-            navigation.navigate('LoginScreen');
+            Alert.alert('New user created, redirecting to Autho Screen.');
+            navigation.navigate('AuthoScreen' ,{ uid: user.uid });
         } catch (error) {
             Alert.alert('Error creating user: ' + error.message);
             console.log(error.message);

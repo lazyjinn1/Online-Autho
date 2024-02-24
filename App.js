@@ -28,7 +28,7 @@ const App = () => {
 
   const auth = getAuth(app);
 
-  const initializeFirebaseServices = async() => {
+  const initializeFirebaseServices = async () => {
     // Initialize Cloud Firestore
     const db = getFirestore(app);
 
@@ -62,9 +62,21 @@ const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="LoginScreen">
-        <Stack.Screen name="LoginScreen" component={LoginScreen} />
-        <Stack.Screen name="RegisterScreen" component={RegisterScreenWrapper} />
-        <Stack.Screen name="AuthoScreen" component={AuthoScreenWrapper} />
+        <Stack.Screen
+          name="LoginScreen"
+          component={LoginScreen}
+          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false}}
+        />
+        <Stack.Screen
+          name="RegisterScreen"
+          component={RegisterScreenWrapper}
+          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false}}
+        />
+        <Stack.Screen
+          name="AuthoScreen"
+          component={AuthoScreenWrapper}
+          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false}}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );
