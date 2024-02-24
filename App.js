@@ -9,8 +9,7 @@ import { useNetInfo } from "@react-native-community/netinfo";
 import { useEffect } from "react";
 import { getStorage } from 'firebase/storage';
 import { getAuth } from 'firebase/auth';
-import app from './firebase.config'
-
+import app from './firebase.config';
 
 //for navigation
 const Stack = createNativeStackNavigator();
@@ -45,7 +44,13 @@ const App = () => {
   };
 
   const RegisterScreenWrapper = (props) => {
-    return <RegisterScreen db={getFirestore(app)} auth={getAuth(app)} {...props} />;
+    return (
+      <RegisterScreen
+        db={getFirestore(app)}
+        auth={getAuth(app)}
+        {...props}
+      />
+    )
   };
 
   const AuthoScreenWrapper = (props) => {
@@ -65,17 +70,17 @@ const App = () => {
         <Stack.Screen
           name="LoginScreen"
           component={LoginScreen}
-          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false}}
+          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false }}
         />
         <Stack.Screen
           name="RegisterScreen"
           component={RegisterScreenWrapper}
-          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false}}
+          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false }}
         />
         <Stack.Screen
           name="AuthoScreen"
           component={AuthoScreenWrapper}
-          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false}}
+          options={{ headerBackVisible: false, headerBackButtonMenuEnabled: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
