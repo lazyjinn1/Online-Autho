@@ -24,7 +24,7 @@ This is an Authorization App built using React-Native. The app allows users to r
  - Required fields automatically block a form from being sent out even after submitting.
 
 ## Prerequisites
-To run this Chat App, you need react-native, Expo Go, or a mobile emulator. 
+To run this App, you need react-native, Expo Go, or a mobile emulator. 
 
 ## Technologies
 * React
